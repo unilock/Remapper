@@ -1,21 +1,53 @@
 plugins {
     id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
+version = '1.0.0'
 group = 'cc.unilock'
 
+configurations {
+    shade
+}
+
 repositories {
+    maven {
+        url = 'https://maven.fabricmc.net/'
+    }
     mavenCentral()
 }
 
 dependencies {
-
+    implementation shade('net.fabricmc:tiny-remapper:0.9.0')
+    implementation shade('org.jetbrains:annotations:24.1.0')
 }
 
 jar {
+    archiveClassifier = 'slim'
+
     manifest {
         attributes(
                 'Main-Class': 'cc.unilock.remapper.Main'
         )
     }
+}
+
+shadowJar {
+    archiveClassifier = ''
+
+    configurations = [project.configurations.shade]
+
+    minimize()
+}
+
+tasks.build.dependsOn tasks.shadowJar
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    it.options.release = 17
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
