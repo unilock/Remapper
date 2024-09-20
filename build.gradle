@@ -20,6 +20,8 @@ repositories {
 dependencies {
     implementation shade('net.fabricmc:tiny-remapper:0.9.0')
     implementation shade('org.jetbrains:annotations:24.1.0')
+    //implementation shade('net.fabricmc:lorenz-tiny:4.0.2')
+    //implementation shade('org.cadixdev:mercury:0.1.0')
 }
 
 jar {

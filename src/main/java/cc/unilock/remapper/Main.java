@@ -21,11 +21,23 @@ import java.nio.file.FileSystem;
 public class Main {
     public static void main(String[] args) {
         File mcpZip = new File("mcp.zip");
+        File joinedSrg = new File("joined.srg");
+        File clientJar = new File("client.jar");
+        File serverJar = new File("server.jar");
         File input = new File("input");
         File output = new File("output");
 
         if (!mcpZip.exists()) {
             throw new RuntimeException("mcp.zip not found!");
+        }
+        if (!joinedSrg.exists()) {
+            throw new RuntimeException("joined.srg not found!");
+        }
+        if (!clientJar.exists()) {
+            throw new RuntimeException("client.jar not found!");
+        }
+        if (!serverJar.exists()) {
+            throw new RuntimeException("server.jar not found!");
         }
         if (!input.exists()) {
             throw new RuntimeException("input dir not found!");
@@ -38,6 +50,7 @@ public class Main {
         StringInterner mem = new StringInterner();
         try (FileSystem mcpZipFs = ZipUtil.openFs(mcpZip.toPath())) {
             mcpBuilder.importEverythingFromZip(mcpZipFs, mem);
+            mcpBuilder.mergeFromJoinedSrg(joinedSrg.toPath(), mem);
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
@@ -54,10 +67,12 @@ public class Main {
                 .build();
 
         try (OutputConsumerPath outputConsumer = new OutputConsumerPath.Builder(output.toPath()).build()) {
+            tiny.readClassPath(clientJar.toPath());
+            tiny.readClassPath(serverJar.toPath());
+
             outputConsumer.addNonClassFiles(input.toPath());
 
             tiny.readInputs(input.toPath());
-            //tiny.readClassPath(classpath);
 
             tiny.apply(outputConsumer);
         } catch (IOException e) {
@@ -65,7 +80,34 @@ public class Main {
         } finally {
             tiny.finish();
         }
+
+//        MappingSet mappingSet = new TinyMappingsJoiner(
+//                mcp, MappingsNamespace.NAMED.toString(),
+//                null, MappingsNamespace.NAMED.toString(),
+//                MappingsNamespace.OFFICIAL.toString()
+//        ).read();
+//
+//        Mercury mercury = createMercury(clientJar, serverJar, mappingSet);
+//
+//        try {
+//            mercury.rewrite(input.toPath(), output.toPath());
+//        } catch (Exception e) {
+//            System.err.println("Could not remap fully!\n"+e);
+//        }
     }
+
+//    private static Mercury createMercury(File clientJar, File serverJar, MappingSet mappingSet) {
+//        Mercury m = new Mercury();
+//        m.setGracefulClasspathChecks(true);
+//        m.getClassPath().add(clientJar.toPath());
+//        m.getClassPath().add(serverJar.toPath());
+//
+//        // TODO: add forge jars to classpath?
+//
+//        m.getProcessors().add(MercuryRemapper.create(mappingSet));
+//
+//        return m;
+//    }
 
     /**
      * Basically tiny-remapper is putting things into the class file that aren't compatible with ASM api level 4, which
